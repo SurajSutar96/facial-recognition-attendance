@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Recognition Attendance System</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo">
+                <i class="fas fa-graduation-cap"></i>
+                <h2>FaceAttend</h2>
+            </div>
+            <ul class="nav-links">
+                <li>
+                    <a href="/dashboard" class="{{ 'active' if page == 'dashboard' else '' }}">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/recognize" class="{{ 'active' if page == 'recognize' else '' }}">
+                        <i class="fas fa-camera"></i>
+                        <span>Take Attendance</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/register" class="{{ 'active' if page == 'register' else '' }}">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Register Student</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/attendance" class="{{ 'active' if page == 'attendance' else '' }}">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Today's Attendance</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/report" class="{{ 'active' if page == 'report' else '' }}">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Attendance Report</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/students" class="{{ 'active' if page == 'students' else '' }}">
+                        <i class="fas fa-users"></i>
+                        <span>All Students</span>
+                    </a>
+                </li>
+            </ul>
+            <div class="footer-info">
+                <p><i class="fas fa-university"></i> College Attendance System</p>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <div class="header-title">
+                    <h1>{{ page_title if page_title else page|title }}</h1>
+                </div>
+                <div class="header-actions">
+                    <div class="date-time">
+                        <span id="current-date"></span>
+                        <span id="current-time"></span>
+                    </div>
+                    <div class="user-profile">
+                        <i class="fas fa-user-circle"></i>
+                        <span>Admin</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                {% if message %}
+                <div class="alert alert-{{ message_type if message_type else 'info' }}">
+                    <i class="fas fa-{% if message_type == 'success' %}check-circle{% elif message_type == 'error' %}exclamation-circle{% elif message_type == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                    <span>{{ message }}</span>
+                </div>
+                {% endif %}
+
+                <!-- Dashboard -->
+                {% if page == 'dashboard' %}
+                <div class="dashboard">
+                    <div class="stats-cards">
+                        <div class="stat-card total-students">
+                            <div class="stat-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>Total Students</h3>
+                                <h2>{{ total_students }}</h2>
+                            </div>
+                        </div>
+                        <div class="stat-card present-today">
+                            <div class="stat-icon">
+                                <i class="fas fa-user-check"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>Present Today</h3>
+                                <h2>{{ present_today }}</h2>
+                            </div>
+                        </div>
+                        <div class="stat-card absent-today">
+                            <div class="stat-icon">
+                                <i class="fas fa-user-times"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>Absent Today</h3>
+                                <h2>{{ total_students - present_today }}</h2>
+                            </div>
+                        </div>
+                        <div class="stat-card recognition">
+                            <div class="stat-icon">
+                                <i class="fas fa-camera"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>Recognition Status</h3>
+                                <h2 class="status-active">Active</h2>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <div class="card recent-attendance">
+                            <div class="card-header">
+                                <h3><i class="fas fa-history"></i> Recent Attendance</h3>
+                                <a href="/attendance" class="view-all">View All</a>
+                            </div>
+                            <div class="card-body">
+                                {% if today_attendance %}
+                                <div class="table-container">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Student ID</th>
+                                                <th>Name</th>
+                                                <th>Time</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for record in today_attendance[:5] %}
+                                            <tr>
+                                                <td>{{ record['student_id'] }}</td>
+                                                <td>{{ record['name'] }}</td>
+                                                <td>{{ record['time'] }}</td>
+                                                <td><span class="status-badge status-present">Present</span></td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="no-data">
+                                    <i class="fas fa-clipboard-list fa-2x"></i>
+                                    <p>No attendance recorded today</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="card quick-actions">
+                            <div class="card-header">
+                                <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="action-buttons">
+                                    <a href="/recognize" class="action-btn take-attendance">
+                                        <i class="fas fa-camera"></i>
+                                        <span>Take Attendance</span>
+                                    </a>
+                                    <a href="/register" class="action-btn register-student">
+                                        <i class="fas fa-user-plus"></i>
+                                        <span>Register Student</span>
+                                    </a>
+                                    <a href="/report" class="action-btn generate-report">
+                                        <i class="fas fa-chart-bar"></i>
+                                        <span>Generate Report</span>
+                                    </a>
+                                    <button onclick="exportTodayAttendance()" class="action-btn export-data">
+                                        <i class="fas fa-download"></i>
+                                        <span>Export Today</span>
+                                    </button>
+                                </div>
+                                <div class="system-info">
+                                    <p><i class="fas fa-info-circle"></i> Last updated: <span id="last-updated">--:--:--</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Take Attendance -->
+                {% elif page == 'recognize' %}
+                <div class="recognition-section">
+                    <div class="card recognition-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-camera"></i> Face Recognition Attendance</h3>
+                            <div class="header-actions">
+                                <button onclick="refreshAttendance()" class="btn btn-sm btn-secondary">
+                                    <i class="fas fa-sync"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="recognition-container">
+                                <div class="video-container">
+                                    <div id="video-wrapper">
+                                        <video id="video" autoplay playsinline></video>
+                                        <canvas id="canvas" style="display: none;"></canvas>
+                                        <div id="overlay" class="face-overlay"></div>
+                                    </div>
+                                    <div class="recognition-status-container">
+                                        <div id="status-indicator" class="status-waiting">
+                                            <i class="fas fa-circle"></i>
+                                            <span>Waiting for camera...</span>
+                                        </div>
+                                        <div id="recognition-result" class="recognition-result"></div>
+                                    </div>
+                                </div>
+                                <div class="controls">
+                                    <button id="start-camera" class="btn btn-primary">
+                                        <i class="fas fa-video"></i> Start Camera
+                                    </button>
+                                    <button id="stop-camera" class="btn btn-secondary" disabled>
+                                        <i class="fas fa-stop"></i> Stop Camera
+                                    </button>
+                                    <button id="capture-face" class="btn btn-success" disabled>
+                                        <i class="fas fa-camera"></i> Capture & Recognize
+                                    </button>
+                                    <button onclick="markManualAttendance()" class="btn btn-info">
+                                        <i class="fas fa-keyboard"></i> Manual Entry
+                                    </button>
+                                </div>
+                                
+                                <div class="attendance-log-section">
+                                    <h4><i class="fas fa-list"></i> Recent Recognitions</h4>
+                                    <div class="attendance-log">
+                                        <div id="attendance-log-list" class="attendance-log-list">
+                                            <div class="no-records">No attendance records yet. Start recognition to see records here.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Register Student -->
+                {% elif page == 'register' %}
+                <div class="registration-section">
+                    <div class="card registration-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-user-plus"></i> Register New Student</h3>
+                        </div>
+                        <div class="card-body">
+                            <form id="registration-form" action="/register" method="post" enctype="multipart/form-data">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="student_id"><i class="fas fa-id-card"></i> Student ID *</label>
+                                        <input type="text" id="student_id" name="student_id" required placeholder="Enter student ID (e.g., STU001)">
+                                        <small class="form-text">Unique identifier for the student</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="name"><i class="fas fa-user"></i> Full Name *</label>
+                                        <input type="text" id="name" name="name" required placeholder="Enter full name">
+                                        <small class="form-text">Student's complete name</small>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="email"><i class="fas fa-envelope"></i> Email Address</label>
+                                        <input type="email" id="email" name="email" placeholder="Enter email address">
+                                        <small class="form-text">Optional email address</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="department"><i class="fas fa-building"></i> Department *</label>
+                                        <select id="department" name="department" required>
+                                            <option value="">Select Department</option>
+                                            <option value="Computer Science">Computer Science</option>
+                                            <option value="Information Technology">Information Technology</option>
+                                            <option value="Electronics">Electronics</option>
+                                            <option value="Mechanical">Mechanical</option>
+                                            <option value="Civil">Civil</option>
+                                            <option value="Electrical">Electrical</option>
+                                            <option value="MBA">MBA</option>
+                                            <option value="MCA">MCA</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="semester"><i class="fas fa-graduation-cap"></i> Semester *</label>
+                                        <select id="semester" name="semester" required>
+                                            <option value="">Select Semester</option>
+                                            {% for i in range(1, 9) %}
+                                            <option value="Semester {{ i }}">Semester {{ i }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="face_image"><i class="fas fa-camera"></i> Face Photo *</label>
+                                        <div class="file-upload">
+                                            <input type="file" id="face_image" name="face_image" accept="image/*" required 
+                                                   onchange="previewImage(event)">
+                                            <label for="face_image" class="file-upload-label">
+                                                <i class="fas fa-cloud-upload-alt"></i>
+                                                <span>Choose face photo</span>
+                                            </label>
+                                            <div id="image-preview" class="image-preview"></div>
+                                            <p class="help-text">
+                                                <i class="fas fa-lightbulb"></i> Tips: Use clear frontal face photo with good lighting
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Register Student
+                                    </button>
+                                    <button type="reset" class="btn btn-secondary">
+                                        <i class="fas fa-redo"></i> Reset Form
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Today's Attendance -->
+                {% elif page == 'attendance' %}
+                <div class="attendance-section">
+                    <div class="card attendance-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-clipboard-list"></i> Today's Attendance</h3>
+                            <div class="header-actions">
+                                <button onclick="refreshAttendance()" class="btn btn-secondary">
+                                    <i class="fas fa-sync"></i> Refresh
+                                </button>
+                                <button onclick="exportTodayAttendance()" class="btn btn-success">
+                                    <i class="fas fa-download"></i> Export CSV
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="attendance-summary">
+                                <div class="summary-item">
+                                    <span class="summary-label">Total Present:</span>
+                                    <span class="summary-value present-count">{{ attendance|length }}</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="summary-label">Total Students:</span>
+                                    <span class="summary-value">{% set students = get_all_students() %}{{ students|length }}</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="summary-label">Attendance Rate:</span>
+                                    <span class="summary-value">
+                                        {% if students|length > 0 %}
+                                            {{ "%.1f"|format((attendance|length / students|length * 100)) }}%
+                                        {% else %}
+                                            0%
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            {% if attendance %}
+                            <div class="table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Student ID</th>
+                                            <th>Name</th>
+                                            <th>Department</th>
+                                            <th>Semester</th>
+                                            <th>Time</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for record in attendance %}
+                                        <tr>
+                                            <td>{{ record['student_id'] }}</td>
+                                            <td>{{ record['name'] }}</td>
+                                            <td>{{ record['department'] if record['department'] else 'N/A' }}</td>
+                                            <td>{{ record['semester'] if record['semester'] else 'N/A' }}</td>
+                                            <td>{{ record['time'] }}</td>
+                                            <td>
+                                                <span class="status-badge status-present">
+                                                    {{ record['status'] }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="no-data">
+                                <i class="fas fa-clipboard-list fa-3x"></i>
+                                <h3>No attendance recorded today</h3>
+                                <p>Use the face recognition system to mark attendance</p>
+                                <a href="/recognize" class="btn btn-primary mt-3">
+                                    <i class="fas fa-camera"></i> Take Attendance Now
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Report -->
+                {% elif page == 'report' %}
+                <div class="report-section">
+                    <div class="card report-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-bar"></i> Attendance Report</h3>
+                        </div>
+                        <div class="card-body">
+                            <form id="report-form" action="/report" method="post" class="report-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="start_date"><i class="fas fa-calendar-alt"></i> Start Date</label>
+                                        <input type="date" id="start_date" name="start_date" value="{{ start_date }}" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="end_date"><i class="fas fa-calendar-alt"></i> End Date</label>
+                                        <input type="date" id="end_date" name="end_date" value="{{ end_date }}" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <button type="submit" class="btn btn-primary" id="generate-report-btn">
+                                            <i class="fas fa-chart-bar"></i> Generate Report
+                                        </button>
+                                        <div id="report-loading" style="display: none;">
+                                            <i class="fas fa-spinner fa-spin"></i> Generating report...
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                            
+                            {% if report %}
+                            <div class="report-summary">
+                                <div class="summary-item">
+                                    <span class="summary-label">Report Period:</span>
+                                    <span class="summary-value">{{ start_date }} to {{ end_date }}</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="summary-label">Total Students:</span>
+                                    <span class="summary-value">{{ report|length }}</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="summary-label">Average Attendance:</span>
+                                    <span class="summary-value">
+                                        {% set total_percentage = report|sum(attribute='attendance_percentage') %}
+                                        {% if report|length > 0 %}
+                                            {{ "%.1f"|format(total_percentage / report|length) }}%
+                                        {% else %}
+                                            0%
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Student ID</th>
+                                            <th>Name</th>
+                                            <th>Department</th>
+                                            <th>Semester</th>
+                                            <th>Total Days</th>
+                                            <th>Present Days</th>
+                                            <th>Absent Days</th>
+                                            <th>Attendance %</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for record in report %}
+                                        {% set total_days = record['total_days'] or 0 %}
+                                        {% set present_days = record['present_days'] or 0 %}
+                                        {% if total_days > 0 %}
+                                            {% set attendance_percentage = (present_days / total_days * 100) %}
+                                        {% else %}
+                                            {% set attendance_percentage = 0 %}
+                                        {% endif %}
+                                        <tr>
+                                            <td>{{ record['student_id'] }}</td>
+                                            <td>{{ record['name'] }}</td>
+                                            <td>{{ record['department'] if record['department'] else 'N/A' }}</td>
+                                            <td>{{ record['semester'] if record['semester'] else 'N/A' }}</td>
+                                            <td>{{ total_days }}</td>
+                                            <td>{{ present_days }}</td>
+                                            <td>{{ record['absent_days'] or 0 }}</td>
+                                            <td>
+                                                <div class="attendance-percentage">
+                                                    <div class="percentage-bar">
+                                                        <div class="percentage-fill" 
+                                                             data-percentage="{{ attendance_percentage|round(1) }}"
+                                                             style="width: {{ attendance_percentage|round(1) }}%"></div>
+                                                    </div>
+                                                    <span class="percentage-text">{{ attendance_percentage|round(1) }}%</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="report-actions">
+                                <button onclick="exportReport()" class="btn btn-success">
+                                    <i class="fas fa-file-excel"></i> Export to Excel
+                                </button>
+                                <button onclick="printReport()" class="btn btn-secondary">
+                                    <i class="fas fa-print"></i> Print Report
+                                </button>
+                            </div>
+                            {% else %}
+                            <div class="no-data">
+                                <i class="fas fa-chart-bar fa-3x"></i>
+                                <h3>No report generated yet</h3>
+                                <p>Select date range and generate report to view attendance statistics</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- All Students -->
+                {% elif page == 'students' %}
+                <div class="students-section">
+                    <div class="card students-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-users"></i> All Registered Students</h3>
+                            <div class="header-actions">
+                                <a href="/register" class="btn btn-primary">
+                                    <i class="fas fa-user-plus"></i> Add Student
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="students-summary">
+                                <div class="summary-item">
+                                    <span class="summary-label">Total Students:</span>
+                                    <span class="summary-value">{{ students|length }}</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="summary-label">Last Registered:</span>
+                                    <span class="summary-value">
+                                        {% if students %}
+                                            {{ students[0]['registration_date'] if students[0]['registration_date'] else 'N/A' }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            {% if students %}
+                            <div class="table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Student ID</th>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th>Department</th>
+                                            <th>Semester</th>
+                                            <th>Registration Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for student in students %}
+                                        <tr>
+                                            <td>{{ student['student_id'] }}</td>
+                                            <td>{{ student['name'] }}</td>
+                                            <td>{{ student['email'] if student['email'] else 'N/A' }}</td>
+                                            <td>{{ student['department'] if student['department'] else 'N/A' }}</td>
+                                            <td>{{ student['semester'] if student['semester'] else 'N/A' }}</td>
+                                            <td>{{ student['registration_date'] }}</td>
+                                            <td class="actions">
+                                                <button class="btn-action view-btn" title="View Details" onclick="viewStudent('{{ student['student_id'] }}')">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="btn-action edit-btn" title="Edit" onclick="editStudent('{{ student['student_id'] }}')">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn-action delete-btn" title="Delete" onclick="deleteStudent('{{ student['student_id'] }}', '{{ student['name'] }}')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="no-data">
+                                <i class="fas fa-users fa-3x"></i>
+                                <h3>No students registered yet</h3>
+                                <p>Register students to start using the attendance system</p>
+                                <a href="/register" class="btn btn-primary mt-3">
+                                    <i class="fas fa-user-plus"></i> Register First Student
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Manual Attendance Modal -->
+    <div id="manual-attendance-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-keyboard"></i> Manual Attendance Entry</h3>
+                <button class="modal-close" onclick="closeManualModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="manual-attendance-form">
+                    <div class="form-group">
+                        <label for="manual-student-id">Student ID *</label>
+                        <input type="text" id="manual-student-id" required placeholder="Enter student ID (e.g., STU001)">
+                    </div>
+                    <div class="form-group">
+                        <label for="manual-name">Student Name *</label>
+                        <input type="text" id="manual-name" required placeholder="Enter student name">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check-circle"></i> Mark Attendance
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="closeManualModal()">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Details Modal -->
+    <div id="student-details-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-user"></i> Student Details</h3>
+                <button class="modal-close" onclick="closeStudentModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="student-details-content">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+    
+    <script>
+        // Additional JavaScript functions
+        function viewStudent(studentId) {
+            showNotification('View student details for: ' + studentId, 'info');
+            // In a real implementation, you would fetch student details and populate the modal
+            // For now, just show a notification
+            const modal = document.getElementById('student-details-modal');
+            if (modal) {
+                modal.style.display = 'flex';
+                document.getElementById('student-details-content').innerHTML = `
+                    <div class="student-details">
+                        <div class="detail-item">
+                            <strong>Student ID:</strong> ${studentId}
+                        </div>
+                        <div class="detail-item">
+                            <strong>Name:</strong> Loading...
+                        </div>
+                        <div class="detail-item">
+                            <strong>Details will be loaded here</strong>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        function editStudent(studentId) {
+            showNotification('Edit student: ' + studentId, 'info');
+            // Implementation for editing student
+        }
+        
+        function deleteStudent(studentId, studentName) {
+            if (confirm(`Are you sure you want to delete student ${studentName} (${studentId})? This action cannot be undone.`)) {
+                showNotification(`Deleting student ${studentName}...`, 'warning');
+                // In a real implementation, you would send a delete request to the server
+                // fetch(`/api/students/${studentId}`, { method: 'DELETE' })
+                // .then(response => response.json())
+                // .then(data => {
+                //     showNotification(data.message, 'success');
+                //     location.reload();
+                // })
+                // .catch(error => {
+                //     showNotification('Error deleting student', 'error');
+                // });
+            }
+        }
+        
+        function closeStudentModal() {
+            const modal = document.getElementById('student-details-modal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+        
+        // Handle report form submission to show loading indicator
+        const reportForm = document.getElementById('report-form');
+        if (reportForm) {
+            reportForm.addEventListener('submit', function() {
+                const submitBtn = document.getElementById('generate-report-btn');
+                const loadingIndicator = document.getElementById('report-loading');
+                
+                if (submitBtn && loadingIndicator) {
+                    submitBtn.style.display = 'none';
+                    loadingIndicator.style.display = 'inline-block';
+                }
+            });
+        }
+        
+        // Initialize percentage bars on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                const percentageFills = document.querySelectorAll('.percentage-fill');
+                percentageFills.forEach(fill => {
+                    const percentage = parseFloat(fill.dataset.percentage) || 0;
+                    
+                    // Set color class based on percentage
+                    if (percentage >= 75) {
+                        fill.classList.add('high');
+                    } else if (percentage >= 50) {
+                        fill.classList.add('medium');
+                    } else {
+                        fill.classList.add('low');
+                    }
+                });
+            }, 100);
+        });
+    </script>
+</body>
+</html>
