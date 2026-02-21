@@ -2,4 +2,4 @@ venv
 generate_ppt.py
 known_faces
 static/uploads
-database
+database/attendance.db
